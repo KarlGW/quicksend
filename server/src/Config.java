@@ -8,8 +8,10 @@ public class Config {
 	private String port;
 	private String uploadDirectory;
 	private String applicationDirectory;
+	private String logDirectory;
 	private String cfgFileName = "quicksend.cfg";
-	private String[] allowedParams = {"tcpport", "tcpaddress", "upload_directory", "application_directory"};
+	private String[] allowedParams = {"tcpport", "tcpaddress", "upload_directory", 
+									  "application_directory", "log_directory"};
 	private HashMap<String, String> configParams;
 
 	private File cfgFile;
@@ -20,6 +22,10 @@ public class Config {
 
 	public String getApplicationDirectory() {
 		return applicationDirectory;
+	}
+
+	public String getLogDirectory() {
+		return logDirectory;
 	}
 
 	public String getPort() {
@@ -34,7 +40,8 @@ public class Config {
 	public void readConfigFile() {
 		
 		try {
-			String appDirName = getAppPath();
+			//String appDirName = getAppPath();
+			String appDirName = new File(".").getPath();
 			File appDir = new File(appDirName);
 			cfgFile = new File(appDir, cfgFileName);
 			if (!cfgFile.exists()) {
@@ -54,8 +61,14 @@ public class Config {
 						this.uploadDirectory = value;
 					} else if (allowedParams[i] == allowedParams[3]) {
 						this.applicationDirectory = value;
+					} else if (allowedParams[i] == allowedParams[4]) {
+						this.logDirectory = value;
 					}
 				}
+			}
+
+			if (logDirectory == null) {
+				this.logDirectory = applicationDirectory + "/logs";
 			}
 
 		} catch (IOException ex) {
@@ -73,6 +86,10 @@ public class Config {
 
 	public void setPort(String port) {
 		this.port = port;
+	}
+
+	public void setLogDirectory(String logDirectory) {
+		this.logDirectory = logDirectory;
 	}
 
 	public void setUploadDirectory(String uploadDirectory) {
