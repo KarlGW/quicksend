@@ -12,6 +12,8 @@ public class ConnectionHandler implements Runnable {
 	private OutputStream os;
 	private DataInputStream dis;
 	private DataOutputStream dos;
+	
+	private volatile boolean connEstablished;
 
 	public ConnectionHandler(Socket socket, String uploadDir) {
 		// Establish the socket
@@ -35,8 +37,10 @@ public class ConnectionHandler implements Runnable {
 			System.err.println("Could not create streams.");
 		}
 
+		ShutdownHook clientHook = new ShutdownHook();
+		clientHook.addShutdownHook();
 		// Set a boolean to control the loop
-		boolean connEstablished = true;
+		connEstablished = true;
 		while(connEstablished) {
 			int command = receiveCommand();
 			switch(command) {
@@ -61,9 +65,12 @@ public class ConnectionHandler implements Runnable {
 
 		try {
 			if (dis != null) dis.close();
+			if (dos != null) dos.close();
+			if (socket != null) socket.close();
 		} catch (IOException ex) {
 			System.err.println("Could not close streams and socket.");
 		}
+		System.out.println("Ending run....");
 	}
 
 	public int receiveCommand() {
@@ -71,7 +78,7 @@ public class ConnectionHandler implements Runnable {
 		try {
 			command = dis.readInt();
 		} catch (IOException ex) {
-			System.err.println("Could not read command");
+			return 0;
 		}
 		return command;
 	}
@@ -83,6 +90,28 @@ public class ConnectionHandler implements Runnable {
 			fileHandler.writeFile(upDir, dis, dos);
 		} catch (Exception ex) {
 			System.err.println("Problem with writing file.");
+		}
+	}
+
+	public void close() {
+		try {
+			if (dis != null) dis.close();
+			if (dos != null) dos.close();
+			if (socket != null) socket.close();
+		} catch (IOException ex) {
+				System.err.println("Borked while closing streams.");
+		}
+	}
+
+	private class ShutdownHook {
+		public void addShutdownHook() {
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+				@Override
+				public void run() {
+					connEstablished = false;
+					close();
+				}
+			}));
 		}
 	}
 }
